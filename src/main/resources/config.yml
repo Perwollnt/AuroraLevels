@@ -57,6 +57,17 @@ xp-gain-action-bar:
   enabled: true
   message: "&fYou gained &6{amount} &fplayer level XP"
 
+xp-gain-message:
+  enabled: false
+  open-menu-when-clicked: false
+  batched: false
+  message:
+    - '&3&m----------------------------------------&r'
+    - ' '
+    - '&fYou gained &6{camount} &fplayer level XP'
+    - ' '
+    - '&3&m----------------------------------------'
+
 level-up-sound:
   enabled: true
   sound: "entity.player.levelup"

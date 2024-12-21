@@ -5,6 +5,8 @@ import gg.auroramc.aurora.api.config.premade.ConcreteMatcherConfig;
 import gg.auroramc.aurora.api.config.premade.IntervalMatcherConfig;
 import gg.auroramc.levels.AuroraLevels;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -22,6 +24,7 @@ public class LevelConfig extends AuroraConfig {
     private LevelUpMessage levelUpMessage;
     private LevelUpTitle levelUpTitle;
     private XpGainActionBar xpGainActionBar;
+    private XpGainMessage xpGainMessage;
     private LevelUpSound levelUpSound;
     private Map<String, IntervalMatcherConfig> levelMatchers;
     private Map<String, ConcreteMatcherConfig> customLevels;
@@ -29,6 +32,16 @@ public class LevelConfig extends AuroraConfig {
     private Map<String, String> iconGenerator;
     private Integer leaderboardCacheSize = 10;
     private Integer maxLevel = -1;
+
+    @Getter
+    @Setter
+    @ToString
+    public static final class XpGainMessage {
+        private Boolean enabled;
+        private Boolean openMenuWhenClicked;
+        private Boolean batched;
+        private List<String> message;
+    }
 
     @Getter
     public static final class CommandAliasConfig {
@@ -120,6 +133,23 @@ public class LevelConfig extends AuroraConfig {
                 (yaml) -> {
                     yaml.set("config-version", null);
                     yaml.set("level-up-sound.sound", "entity.player.levelup");
+                    yaml.set("config-version", 5);
+                },
+                (yaml) -> {
+                    XpGainMessage xpGainMessage = new XpGainMessage();
+                    xpGainMessage.setEnabled(false);
+                    xpGainMessage.setOpenMenuWhenClicked(false);
+                    xpGainMessage.setBatched(false);
+                    xpGainMessage.setMessage(List.of(
+                            "&3&m----------------------------------------&r",
+                            " ",
+                            "&fYou gained &6{camount} &fplayer level XP",
+                            " ",
+                            "&3&m----------------------------------------"
+                    ));
+
+                    yaml.set("config-version", null);
+                    yaml.set("xp-gain-message", xpGainMessage);
                     yaml.set("config-version", 5);
                 }
         );

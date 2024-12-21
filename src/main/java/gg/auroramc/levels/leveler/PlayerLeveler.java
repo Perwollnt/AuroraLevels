@@ -15,6 +15,7 @@ import gg.auroramc.levels.api.event.PlayerLevelUpEvent;
 import gg.auroramc.levels.api.event.PlayerXpGainEvent;
 import gg.auroramc.levels.api.leveler.Leveler;
 import gg.auroramc.levels.reward.corrector.CommandCorrector;
+import io.lumine.mythic.bukkit.utils.redis.jedis.Tuple;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
@@ -27,8 +28,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +57,8 @@ public class PlayerLeveler implements Leveler, Listener {
         return levelMatcher.get();
     }
 
+    public CumulativeXPManager cumulativeXPManager;
+
     public PlayerLeveler(AuroraLevels plugin) {
         Bukkit.getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
@@ -66,6 +71,9 @@ public class PlayerLeveler implements Leveler, Listener {
         this.levelMatcher.set(new MatcherManager(rewardFactory));
 
         rewardAutoCorrector.registerCorrector(NamespacedId.fromDefault("command"), new CommandCorrector(plugin));
+
+        // todo move to config
+        cumulativeXPManager = new CumulativeXPManager(3, plugin);
 
         reload(true);
     }
@@ -108,9 +116,36 @@ public class PlayerLeveler implements Leveler, Listener {
         double requiredXpToLevelUp = getRequiredXpForLevelUp(player);
         double newXP = data.getCurrentXP() + xp;
 
+        cumulativeXPManager.addCumulativeXP(player.getUniqueId(), xp);
+
         if (plugin.getConfigManager().getLevelConfig().getXpGainActionBar().getEnabled()) {
+
+            double cumulativeXP = cumulativeXPManager.getCumulativeXP(player.getUniqueId());
+
             ActionBar.send(player, plugin.getConfigManager().getLevelConfig().getXpGainActionBar().getMessage(),
-                    Placeholder.of("{amount}", AuroraAPI.formatNumber(xp)));
+                    Placeholder.of("{amount}", AuroraAPI.formatNumber(xp)),
+                    Placeholder.of("{camount}", AuroraAPI.formatNumber(cumulativeXP))
+            );
+        }
+
+
+        // if the message is enabled and IS NOT batched, we send it, if its batched we handle it on cache leave becase thats easy.
+        if(plugin.getConfigManager().getLevelConfig().getXpGainMessage().getEnabled() && !plugin.getConfigManager().getLevelConfig().getXpGainMessage().getBatched()) {
+
+            List<String> xpGainMessage = plugin.getConfigManager().getLevelConfig().getXpGainMessage().getMessage();
+            List<Placeholder<?>> placeholders = new ArrayList<>();
+            placeholders.add(Placeholder.of("{amount}", AuroraAPI.formatNumber(xp)));
+            placeholders.add(Placeholder.of("{camount}", AuroraAPI.formatNumber(cumulativeXPManager.getCumulativeXP(player.getUniqueId()))));
+
+            int count = 0;
+            var text = Component.text();
+            for(String line : xpGainMessage) {
+                count++;
+                text.append(Text.component(player, line, placeholders));
+                if(count != xpGainMessage.size()) text.append(Component.newline());
+            }
+
+            Chat.sendMessage(player, text.build());
         }
 
         if (newXP < requiredXpToLevelUp) {
