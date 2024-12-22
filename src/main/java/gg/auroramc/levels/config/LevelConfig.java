@@ -136,11 +136,12 @@ public class LevelConfig extends AuroraConfig {
                     yaml.set("config-version", 5);
                 },
                 (yaml) -> {
-                    XpGainMessage xpGainMessage = new XpGainMessage();
-                    xpGainMessage.setEnabled(false);
-                    xpGainMessage.setOpenMenuWhenClicked(false);
-                    xpGainMessage.setBatched(false);
-                    xpGainMessage.setMessage(List.of(
+                    yaml.set("config-version", null);
+
+                    yaml.set("xp-gain-message.enabled", false);
+                    yaml.set("xp-gain-message.open-menu-when-clicked", false);
+                    yaml.set("xp-gain-message.batched", false);
+                    yaml.set("xp-gain-message.message", List.of(
                             "&3&m----------------------------------------&r",
                             " ",
                             "&fYou gained &6{camount} &fplayer level XP",
@@ -148,9 +149,7 @@ public class LevelConfig extends AuroraConfig {
                             "&3&m----------------------------------------"
                     ));
 
-                    yaml.set("config-version", null);
-                    yaml.set("xp-gain-message", xpGainMessage);
-                    yaml.set("config-version", 5);
+                    yaml.set("config-version", 6);
                 }
         );
     }
